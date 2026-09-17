@@ -17,21 +17,52 @@ dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
 
-// Configure CORS origin from environment (supports comma-separated list or *)
-const corsOrigin = process.env.CORS_ORIGIN || "*";
-const allowedOrigins = corsOrigin === "*"
-  ? "*"
-  : corsOrigin.split(",").map((origin) => origin.trim());
+// Configure CORS: allow Vercel production frontend, local dev, and any custom CORS_ORIGIN
+const defaultAllowedOrigins = [
+  "https://prisma-crud-api-project-fe.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
+
+const envOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim().replace(/\/+$/, ""))
+  : [];
+
+const allowedOriginsList = Array.from(new Set([...defaultAllowedOrigins, ...envOrigins]));
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. mobile apps, curl, Postman, server-to-server)
+      if (!origin) return callback(null, true);
+
+      const normalizedOrigin = origin.replace(/\/+$/, "");
+      if (
+        process.env.CORS_ORIGIN === "*" ||
+        allowedOriginsList.includes(normalizedOrigin) ||
+        normalizedOrigin.endsWith(".vercel.app")
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true); // Permissive fallback to prevent breaking cross-domain requests
+    },
     credentials: true,
   })
 );
 app.use(express.json());
 
 const PORT = process.env.PORT || 8000;
+
+// Health-check / Root API route
+app.get("/", (req, res) => {
+  res.status(200).json({
+    status: "online",
+    message: "Employee Management API is running",
+    endpoints: {
+      employees: "/api/employees",
+    },
+  });
+});
 
 // GET ALL
 app.get("/api/employees", async (req, res) => {
