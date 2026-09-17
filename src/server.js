@@ -17,38 +17,17 @@ dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
 
-// Configure CORS: allow Vercel production frontend, local dev, and any custom CORS_ORIGIN
-const defaultAllowedOrigins = [
-  "https://prisma-crud-api-project-fe.vercel.app",
-  "http://localhost:5173",
-  "http://localhost:3000",
-];
-
-const envOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim().replace(/\/+$/, ""))
-  : [];
-
-const allowedOriginsList = Array.from(new Set([...defaultAllowedOrigins, ...envOrigins]));
-
+// Bulletproof CORS: dynamically reflect request origin (allowing Vercel, localhost, etc.)
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. mobile apps, curl, Postman, server-to-server)
-      if (!origin) return callback(null, true);
-
-      const normalizedOrigin = origin.replace(/\/+$/, "");
-      if (
-        process.env.CORS_ORIGIN === "*" ||
-        allowedOriginsList.includes(normalizedOrigin) ||
-        normalizedOrigin.endsWith(".vercel.app")
-      ) {
-        return callback(null, true);
-      }
-      return callback(null, true); // Permissive fallback to prevent breaking cross-domain requests
-    },
+    origin: true,
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+    optionsSuccessStatus: 200,
   })
 );
+app.options("*", cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 8000;
