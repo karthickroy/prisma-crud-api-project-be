@@ -1,60 +1,20 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
-const path = require("path");
-const fs = require("fs");
 const { PrismaClient } = require("@prisma/client");
 
-// Load mode-specific environment file (.env.development / .env.production) if present
-const nodeEnv = process.env.NODE_ENV || "development";
-const envFile = path.resolve(__dirname, `../.env.${nodeEnv}`);
-
-if (fs.existsSync(envFile)) {
-  dotenv.config({ path: envFile });
-}
-dotenv.config(); 
-
-// Sanitize DATABASE_URL (strip accidental wrapping quotes from cloud dashboards)
-if (process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = process.env.DATABASE_URL.trim().replace(/^["']|["']$/g, "");
-}
+dotenv.config();
 
 const app = express();
 const prisma = new PrismaClient();
 
-// Test MongoDB connection on startup
-prisma
-  .$connect()
-  .then(() => console.log("✅ Successfully connected to MongoDB Atlas"))
-  .catch((err) => {
-    console.error("❌ MongoDB Atlas connection error on startup:", err.message);
-    console.error("👉 Please ensure 0.0.0.0/0 is added to MongoDB Atlas Network Access (IP Whitelist).");
-  });
-
-// Bulletproof CORS: dynamically reflect request origin (allowing Vercel, localhost, etc.)
-app.use(
-  cors({
-    origin: true,
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
-    optionsSuccessStatus: 200,
-  })
-);
-app.options("*", cors());
+app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 8000;
 
-// Health-check / Root API route
 app.get("/", (req, res) => {
-  res.status(200).json({
-    status: "online",
-    message: "Employee Management API is running",
-    endpoints: {
-      employees: "/api/employees",
-    },
-  });
+  res.send("API is running");
 });
 
 // GET ALL
@@ -208,5 +168,5 @@ app.delete("/api/employees/:id", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running in [${nodeEnv}] mode on http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
