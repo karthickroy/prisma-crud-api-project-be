@@ -14,8 +14,22 @@ if (fs.existsSync(envFile)) {
 }
 dotenv.config(); 
 
+// Sanitize DATABASE_URL (strip accidental wrapping quotes from cloud dashboards)
+if (process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = process.env.DATABASE_URL.trim().replace(/^["']|["']$/g, "");
+}
+
 const app = express();
 const prisma = new PrismaClient();
+
+// Test MongoDB connection on startup
+prisma
+  .$connect()
+  .then(() => console.log("✅ Successfully connected to MongoDB Atlas"))
+  .catch((err) => {
+    console.error("❌ MongoDB Atlas connection error on startup:", err.message);
+    console.error("👉 Please ensure 0.0.0.0/0 is added to MongoDB Atlas Network Access (IP Whitelist).");
+  });
 
 // Bulletproof CORS: dynamically reflect request origin (allowing Vercel, localhost, etc.)
 app.use(
