@@ -1,0 +1,8 @@
+node_modules
+.env.production
+.env.production.local
+.env.local
+.env.*.local
+*.log
+logs
+dist
