@@ -10,10 +10,12 @@ const prisma = new PrismaClient();
 
 app.use(
   cors({
-    origin: [
-      "https://prisma-crud-api-project-fe.vercel.app",
-      "http://localhost:5173",
-    ],
+    // origin: [
+    //   "https://prisma-crud-api-project-fe.vercel.app",
+    //   "http://localhost:5173",
+
+    // ],
+    origin: process.env.FRONT_END_URL,
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
