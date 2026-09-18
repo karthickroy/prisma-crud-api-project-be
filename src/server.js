@@ -8,7 +8,16 @@ dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "https://prisma-crud-api-project-fe.vercel.app",
+      "http://localhost:5173",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 const PORT = process.env.PORT || 8000;
